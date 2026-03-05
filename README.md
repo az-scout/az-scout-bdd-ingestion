@@ -121,10 +121,10 @@ This provisions:
   - Spot historization job (hourly)
   - SKU Mapper job (daily 04:00 UTC)
   - Price Aggregator job (daily 04:30 UTC)
-  - API container app (from [az_scout_bdd_api](https://github.com/lrivallain/az_scout_bdd_api))
+  - API container app (from [az_scout_bdd_api](https://github.com/rsabile/az_scout_bdd_api))
 - **System-assigned Managed Identity** for passwordless DB auth
 
-> **Note:** The API container image is built from the [az_scout_bdd_api](https://github.com/lrivallain/az_scout_bdd_api) repository. Build and push the image to ACR before running `terraform apply`.
+> **Note:** The API container image is built from the [az_scout_bdd_api](https://github.com/rsabile/az_scout_bdd_api) repository. Build and push the image to ACR before running `terraform apply`.
 
 ## Environment Variables
 
@@ -172,8 +172,8 @@ The schema (`sql/schema.sql`) defines 8 tables:
 
 ## Related Repositories
 
-- **[az_scout_bdd_api](https://github.com/lrivallain/az_scout_bdd_api)** — REST API serving the data stored by this pipeline
-- **[az-scout-plugin-bdd-sku](https://github.com/lrivallain/az-scout-plugin-bdd-sku)** — az-scout plugin (UI + MCP tools) that consumes the API
+- **[az_scout_bdd_api](https://github.com/rsabile/az_scout_bdd_api)** — REST API serving the data stored by this pipeline
+- **[az-scout-plugin-bdd-sku](https://github.com/rsabile/az-scout-plugin-bdd-sku)** — az-scout plugin (UI + MCP tools) that consumes the API
 - **[az-scout](https://github.com/lrivallain/az-scout)** — Core application
 
 ## License
