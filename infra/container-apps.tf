@@ -100,7 +100,139 @@ resource "azurerm_role_assignment" "ingestion_contributor" {
 }
 
 # ---------------------------------------------------------------------
-# Container Apps Job – Scheduled (daily at 02:00 UTC)
+# Multi-Currency Pricing Jobs – staggered schedule
+# ---------------------------------------------------------------------
+
+locals {
+  currency_schedule = {
+    for idx, code in var.currency_codes : code => {
+      minute = (idx * var.currency_stagger_minutes) % 60
+      hour   = var.currency_start_hour + floor((idx * var.currency_stagger_minutes) / 60)
+    }
+  }
+}
+
+resource "azurerm_container_app_job" "pricing_currency" {
+  for_each = local.currency_schedule
+
+  name                         = "${var.prefix}-price-${lower(each.key)}"
+  location                     = azurerm_resource_group.main.location
+  resource_group_name          = azurerm_resource_group.main.name
+  container_app_environment_id = azurerm_container_app_environment.main.id
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.ingestion_jobs.id]
+  }
+
+  replica_timeout_in_seconds = var.currency_job_timeout
+  replica_retry_limit        = 3
+
+  schedule_trigger_config {
+    cron_expression          = "${each.value.minute} ${each.value.hour} * * *"
+    parallelism              = 1
+    replica_completion_count = 1
+  }
+
+  template {
+    container {
+      name   = "bdd-sku-ingestion"
+      image  = "${azurerm_container_registry.main.login_server}/bdd-sku-ingestion:latest"
+      cpu    = 1.0
+      memory = "2Gi"
+
+      env {
+        name  = "POSTGRES_HOST"
+        value = azurerm_postgresql_flexible_server.main.fqdn
+      }
+
+      env {
+        name  = "POSTGRES_PORT"
+        value = "5432"
+      }
+
+      env {
+        name  = "POSTGRES_DB"
+        value = var.postgres_db_name
+      }
+
+      env {
+        name  = "POSTGRES_USER"
+        value = var.postgres_admin_user
+      }
+
+      env {
+        name        = "POSTGRES_PASSWORD"
+        secret_name = "pg-password"
+      }
+
+      env {
+        name  = "POSTGRES_SSLMODE"
+        value = "require"
+      }
+
+      env {
+        name  = "ENABLE_AZURE_PRICING_COLLECTOR"
+        value = "true"
+      }
+
+      env {
+        name  = "AZURE_PRICING_MAX_ITEMS"
+        value = var.max_pricing_items
+      }
+
+      env {
+        name  = "AZURE_PRICING_FILTERS"
+        value = jsonencode({ "currencyCode" = each.key })
+      }
+
+      env {
+        name  = "ENABLE_AZURE_SPOT_COLLECTOR"
+        value = "false"
+      }
+
+      env {
+        name  = "JOB_TYPE"
+        value = "scheduled-pricing-${lower(each.key)}"
+      }
+
+      env {
+        name  = "PYTHONUNBUFFERED"
+        value = "1"
+      }
+
+      env {
+        name  = "LOG_LEVEL"
+        value = var.log_level
+      }
+
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = azurerm_user_assigned_identity.ingestion_jobs.client_id
+      }
+    }
+  }
+
+  secret {
+    name  = "pg-password"
+    value = var.postgres_admin_password
+  }
+
+  registry {
+    server   = azurerm_container_registry.main.login_server
+    identity = azurerm_user_assigned_identity.ingestion_jobs.id
+  }
+
+  tags = {
+    Environment  = var.environment
+    Project      = "bdd-sku"
+    JobType      = "pricing-currency"
+    CurrencyCode = each.key
+  }
+}
+
+# ---------------------------------------------------------------------
+# Container Apps Job – Scheduled Spot Collection (daily at 02:00 UTC)
 # ---------------------------------------------------------------------
 resource "azurerm_container_app_job" "ingestion_scheduled" {
   name                         = "${var.prefix}-sched"
@@ -161,17 +293,12 @@ resource "azurerm_container_app_job" "ingestion_scheduled" {
 
       env {
         name  = "ENABLE_AZURE_PRICING_COLLECTOR"
-        value = "true"
-      }
-
-      env {
-        name  = "AZURE_PRICING_MAX_ITEMS"
-        value = var.max_pricing_items
+        value = "false"
       }
 
       env {
         name  = "JOB_TYPE"
-        value = "scheduled"
+        value = "scheduled-spot"
       }
 
       env {
@@ -469,7 +596,7 @@ resource "azurerm_container_app_job" "sku_mapper" {
     identity_ids = [azurerm_user_assigned_identity.ingestion_jobs.id]
   }
 
-  replica_timeout_in_seconds = 600
+  replica_timeout_in_seconds = 3600
   replica_retry_limit        = 3
 
   schedule_trigger_config {
@@ -482,8 +609,8 @@ resource "azurerm_container_app_job" "sku_mapper" {
     container {
       name   = "sku-mapper-job"
       image  = "${azurerm_container_registry.main.login_server}/sku-mapper-job:latest"
-      cpu    = 0.25
-      memory = "0.5Gi"
+      cpu    = 0.5
+      memory = "1Gi"
 
       env {
         name  = "PGHOST"
@@ -728,9 +855,9 @@ resource "azurerm_container_app" "api" {
         port      = var.api_port
         path      = "/health"
 
-        initial_delay    = 5
-        interval_seconds = 30
-        timeout          = 5
+        initial_delay           = 5
+        interval_seconds        = 30
+        timeout                 = 5
         failure_count_threshold = 3
       }
 
@@ -739,8 +866,8 @@ resource "azurerm_container_app" "api" {
         port      = var.api_port
         path      = "/health"
 
-        interval_seconds = 10
-        timeout          = 5
+        interval_seconds        = 10
+        timeout                 = 5
         failure_count_threshold = 3
       }
     }

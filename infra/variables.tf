@@ -108,9 +108,42 @@ variable "sku_mapper_cron" {
 }
 
 variable "price_aggregator_cron" {
-  description = "Cron expression for the price aggregator job (UTC). Should run after sku-mapper."
+  description = "Cron expression for the price aggregator job (UTC). Should run after all currency pricing jobs."
   type        = string
-  default     = "30 4 * * *" # Daily at 04:30 UTC
+  default     = "0 5 * * *" # Daily at 05:00 UTC (all currency jobs finish by ~03:55)
+}
+
+# ---------------------------------------------------------------------
+# Multi-Currency Pricing Jobs
+# ---------------------------------------------------------------------
+
+variable "currency_codes" {
+  description = "List of currency codes to collect pricing data for. One Container App Job is created per currency."
+  type        = list(string)
+  default = [
+    "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY",
+    "DKK", "INR", "KRW", "NOK", "NZD", "SEK", "BRL", "MXN",
+    "ZAR", "ARS", "RUB", "TWD", "MYR", "IDR", "TRY", "HKD",
+    "SAR", "ISK"
+  ]
+}
+
+variable "currency_stagger_minutes" {
+  description = "Minutes between each currency job start to limit concurrent PG connections"
+  type        = number
+  default     = 5
+}
+
+variable "currency_start_hour" {
+  description = "UTC hour for the first currency pricing job"
+  type        = number
+  default     = 1
+}
+
+variable "currency_job_timeout" {
+  description = "Replica timeout in seconds for each currency pricing job"
+  type        = number
+  default     = 5400 # 1h30
 }
 
 # ---------------------------------------------------------------------

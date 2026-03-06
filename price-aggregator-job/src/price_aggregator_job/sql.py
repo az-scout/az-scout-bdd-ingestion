@@ -50,7 +50,7 @@ SELECT
     r.arm_region_name,
     c.category,
     'retail',
-    'USD',
+    r.currency_code,
     AVG(r.unit_price),
     PERCENTILE_CONT(0.5)  WITHIN GROUP (ORDER BY r.unit_price),
     MIN(r.unit_price),
@@ -62,11 +62,10 @@ SELECT
     COUNT(DISTINCT r.arm_sku_name)
 FROM retail_prices_vm r
 JOIN vm_sku_catalog c ON r.arm_sku_name = c.sku_name
-WHERE r.currency_code = 'USD'
-  AND r.pricing_type  = 'Consumption'
+WHERE r.pricing_type  = 'Consumption'
   AND r.sku_name NOT LIKE '%% Spot%%'
   AND r.unit_price > 0
-GROUP BY r.arm_region_name, c.category;
+GROUP BY r.arm_region_name, c.category, r.currency_code;
 """
 
 AGGREGATE_RETAIL_GLOBAL = """\
@@ -81,7 +80,7 @@ SELECT
     r.arm_region_name,
     NULL,
     'retail',
-    'USD',
+    r.currency_code,
     AVG(r.unit_price),
     PERCENTILE_CONT(0.5)  WITHIN GROUP (ORDER BY r.unit_price),
     MIN(r.unit_price),
@@ -93,11 +92,10 @@ SELECT
     COUNT(DISTINCT r.arm_sku_name)
 FROM retail_prices_vm r
 JOIN vm_sku_catalog c ON r.arm_sku_name = c.sku_name
-WHERE r.currency_code = 'USD'
-  AND r.pricing_type  = 'Consumption'
+WHERE r.pricing_type  = 'Consumption'
   AND r.sku_name NOT LIKE '%% Spot%%'
   AND r.unit_price > 0
-GROUP BY r.arm_region_name;
+GROUP BY r.arm_region_name, r.currency_code;
 """
 
 AGGREGATE_SPOT_BY_CATEGORY = """\
@@ -112,7 +110,7 @@ SELECT
     r.arm_region_name,
     c.category,
     'spot',
-    'USD',
+    r.currency_code,
     AVG(r.unit_price),
     PERCENTILE_CONT(0.5)  WITHIN GROUP (ORDER BY r.unit_price),
     MIN(r.unit_price),
@@ -124,11 +122,10 @@ SELECT
     COUNT(DISTINCT r.arm_sku_name)
 FROM retail_prices_vm r
 JOIN vm_sku_catalog c ON r.arm_sku_name = c.sku_name
-WHERE r.currency_code = 'USD'
-  AND r.pricing_type  = 'Consumption'
+WHERE r.pricing_type  = 'Consumption'
   AND r.sku_name LIKE '%% Spot%%'
   AND r.unit_price > 0
-GROUP BY r.arm_region_name, c.category;
+GROUP BY r.arm_region_name, c.category, r.currency_code;
 """
 
 AGGREGATE_SPOT_GLOBAL = """\
@@ -143,7 +140,7 @@ SELECT
     r.arm_region_name,
     NULL,
     'spot',
-    'USD',
+    r.currency_code,
     AVG(r.unit_price),
     PERCENTILE_CONT(0.5)  WITHIN GROUP (ORDER BY r.unit_price),
     MIN(r.unit_price),
@@ -155,11 +152,10 @@ SELECT
     COUNT(DISTINCT r.arm_sku_name)
 FROM retail_prices_vm r
 JOIN vm_sku_catalog c ON r.arm_sku_name = c.sku_name
-WHERE r.currency_code = 'USD'
-  AND r.pricing_type  = 'Consumption'
+WHERE r.pricing_type  = 'Consumption'
   AND r.sku_name LIKE '%% Spot%%'
   AND r.unit_price > 0
-GROUP BY r.arm_region_name;
+GROUP BY r.arm_region_name, r.currency_code;
 """
 
 # Ordered list for sequential execution.
