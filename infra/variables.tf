@@ -143,7 +143,7 @@ variable "currency_start_hour" {
 variable "currency_job_timeout" {
   description = "Replica timeout in seconds for each currency pricing job"
   type        = number
-  default     = 5400 # 1h30
+  default     = 21600 # 6h
 }
 
 # ---------------------------------------------------------------------
