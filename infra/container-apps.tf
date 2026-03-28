@@ -685,7 +685,7 @@ resource "azurerm_container_app_job" "price_aggregator" {
     identity_ids = [azurerm_user_assigned_identity.ingestion_jobs.id]
   }
 
-  replica_timeout_in_seconds = 3600
+  replica_timeout_in_seconds = 21600
   replica_retry_limit        = 3
 
   schedule_trigger_config {
