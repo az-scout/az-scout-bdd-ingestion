@@ -3,6 +3,12 @@
 
 terraform {
   required_version = ">= 1.0"
+  backend "azurerm" {
+    resource_group_name  = "rg-azure-scout-bdd"
+    storage_account_name = "azscoutterraform"
+    container_name       = "tfstate"
+    key                  = "bdd-ingestion.tfstate"
+  }
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -56,8 +62,10 @@ resource "azurerm_postgresql_flexible_server" "main" {
   }
 
   tags = {
-    Environment = var.environment
-    Project     = "bdd-sku"
+    Environment     = var.environment
+    Project         = "bdd-sku"
+    SecurityControl = "Ignore"
+    CostControl     = "Ignore"
   }
 }
 

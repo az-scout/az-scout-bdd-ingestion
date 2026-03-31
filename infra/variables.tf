@@ -1,6 +1,7 @@
 variable "subscription_id" {
   description = "Azure subscription ID"
   type        = string
+  default     = "598a9a76-75ba-48f4-af47-1217718e1980"
 }
 
 variable "resource_group_name" {
@@ -50,15 +51,15 @@ variable "postgres_db_name" {
 }
 
 variable "postgres_sku" {
-  description = "PostgreSQL Flexible Server SKU (e.g. B_Standard_B1ms, GP_Standard_D2s_v3)"
+  description = "PostgreSQL Flexible Server SKU (e.g. B_Standard_B1ms, GP_Standard_D4ds_v5)"
   type        = string
-  default     = "B_Standard_B1ms"
+  default     = "GP_Standard_D4ds_v5"
 }
 
 variable "postgres_storage_mb" {
   description = "PostgreSQL storage in MB"
   type        = number
-  default     = 32768 # 32 GB
+  default     = 1048576 # 1 TB
 }
 
 # ---------------------------------------------------------------------
