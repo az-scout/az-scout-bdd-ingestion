@@ -87,6 +87,14 @@ CREATE INDEX IF NOT EXISTS idx_retail_vm_pricing_type_price
     ON retail_prices_vm (pricing_type, unit_price)
     WHERE unit_price > 0;
 
+-- Composite: keyset pagination sort order (v1/retail/prices)
+CREATE INDEX IF NOT EXISTS idx_retail_vm_keyset
+    ON retail_prices_vm (job_datetime, currency_code, arm_region_name, arm_sku_name, sku_id, pricing_type, reservation_term);
+
+-- Composite: DISTINCT ON for /v1/retail/prices/latest
+CREATE INDEX IF NOT EXISTS idx_retail_vm_latest_distinct
+    ON retail_prices_vm (currency_code, arm_region_name, sku_id, pricing_type, reservation_term, job_datetime DESC, job_id DESC);
+
 -- ============================================================
 -- spot_eviction_rates: VM spot eviction rates from Resource Graph
 -- ============================================================
@@ -107,6 +115,10 @@ CREATE INDEX IF NOT EXISTS idx_spot_eviction_job_datetime
     ON spot_eviction_rates (job_datetime DESC);
 CREATE INDEX IF NOT EXISTS idx_spot_eviction_snapshot_region
     ON spot_eviction_rates (job_datetime, region, sku_name);
+
+-- Composite: DISTINCT ON for /v1/spot/eviction-rates/latest
+CREATE INDEX IF NOT EXISTS idx_spot_eviction_latest_distinct
+    ON spot_eviction_rates (region, sku_name, job_datetime DESC, job_id DESC);
 
 -- ============================================================
 -- spot_price_history: VM spot price history from Resource Graph
@@ -160,5 +172,13 @@ CREATE INDEX IF NOT EXISTS idx_price_summary_run
     ON price_summary (run_id);
 CREATE INDEX IF NOT EXISTS idx_price_summary_type
     ON price_summary (price_type);
+
+-- Composite: /v1/pricing/summary/latest and /cheapest subquery
+CREATE INDEX IF NOT EXISTS idx_price_summary_run_type_region
+    ON price_summary (run_id, price_type, region);
+
+-- Composite: snapshot resolution + sort
+CREATE INDEX IF NOT EXISTS idx_price_summary_snapshot_run
+    ON price_summary (snapshot_utc DESC, run_id);
 
 COMMIT;
