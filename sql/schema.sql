@@ -1,6 +1,9 @@
 -- az-scout-plugin-bdd-sku: PostgreSQL 17 schema
 -- Mounted into postgres container at /docker-entrypoint-initdb.d/01-schema.sql
 
+-- Enable pg_trgm for fast ILIKE / substring searches
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 BEGIN;
 
 -- ============================================================
@@ -180,5 +183,15 @@ CREATE INDEX IF NOT EXISTS idx_price_summary_run_type_region
 -- Composite: snapshot resolution + sort
 CREATE INDEX IF NOT EXISTS idx_price_summary_snapshot_run
     ON price_summary (snapshot_utc DESC, run_id);
+
+-- ============================================================
+-- Trigram indexes for fast ILIKE / substring matching
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_retail_vm_sku_trgm
+    ON retail_prices_vm USING gin (arm_sku_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_spot_eviction_sku_trgm
+    ON spot_eviction_rates USING gin (sku_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_spot_price_sku_trgm
+    ON spot_price_history USING gin (sku_name gin_trgm_ops);
 
 COMMIT;

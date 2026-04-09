@@ -95,6 +95,13 @@ resource "azurerm_postgresql_flexible_server_database" "azscout" {
   collation = "en_US.utf8"
 }
 
+# Allow pg_trgm extension for fast ILIKE / substring searches
+resource "azurerm_postgresql_flexible_server_configuration" "extensions" {
+  name      = "azure.extensions"
+  server_id = azurerm_postgresql_flexible_server.main.id
+  value     = "PG_TRGM"
+}
+
 # ---------------------------------------------------------------------
 # Schema application
 # ---------------------------------------------------------------------
